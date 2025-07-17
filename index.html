@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Repository Viewer</title>
+  <meta name="description" content="Simple repository viewer with tag cloud from Blogger API." />
+  <meta name="author" content="Only Me" />
+  <meta name="robots" content="index, follow" />
+<link rel="icon" href="https://raw.githubusercontent.com/hijiduatilu17plus3/0001/refs/heads/main/favicon.ico" type="image/x-icon">
+<link rel="icon" href="https://raw.githubusercontent.com/hijiduatilu17plus3/0001/refs/heads/main/favicon.png" type="image/png">
+<link rel="apple-touch-icon"  href="https://raw.githubusercontent.com/hijiduatilu17plus3/0001/refs/heads/main/apple-touch-icon.png">
+<link rel="manifest" href="https://raw.githubusercontent.com/hijiduatilu17plus3/0001/refs/heads/main/site.webmanifest">
+
+<style>
+  a {
+    text-decoration: none;
+  }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 960px;
+      margin: auto;
+    }
+    h3 {
+      margin-top: 0;
+    }
+    .repo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .repo-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 6px;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .repo-item:hover {
+      background: #eef;
+    }
+    .repo-icon {
+      font-size: 20px;
+    }
+    .pagination {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .pagination button {
+      margin: 0 5px;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    .search-input {
+      width: 100%;
+      padding: 6px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+    }
+    .label-list {
+      margin-top: 40px;
+      font-size: 14px;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+    .label-list h4 {
+      margin-bottom: 10px;
+    }
+    .label-list span {
+      display: inline-block;
+      margin: 3px 6px 3px 0;
+      background: #eef;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+  </style>
+  
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "Leaked Video",
+    "description": "Leaked private video",
+    "thumbnailUrl": "https://github.com/mayafitri0001/mayaindri/raw/refs/heads/main/f/v/thumb/df.png",
+    "uploadDate": "2025-07-07T08:00:00+07:00",
+    "contentUrl": "https://github.com/mayafitri0001/mayaindri/raw/refs/heads/main/f/q/k07.mp4",
+    "embedUrl": "https://github.com/mayafitri0001/mayaindri/raw/refs/heads/main/f/q/k07.mp4"
+  }
+  </script>
+  
+</head>
+<body>
+<main>
+  <h3>Personal Folder</h3>
+  
+    <input type="text" class="search-input" placeholder="Search files..." oninput="filterPosts(this.value)" />
+    
+          <video 
+          controls 
+          preload="metadata"
+          poster="https://github.com/mayafitri0001/mayaindri/raw/refs/heads/main/f/v/thumb/df.png"
+          width="100%"
+          height="auto"
+        >
+          <source src="https://github.com/mayafitri0001/mayaindri/raw/refs/heads/main/f/q/k07.mp4" type="video/mp4" />
+        </video>
+
+        
+       
+
+  <div id="repo-container" class="repo-grid"></div>
+
+  <div class="pagination">
+    <button onclick="changePage(-1)">Prev</button>
+    <span id="page-info"></span>
+    <button onclick="changePage(1)">Next</button>
+  </div>
+
+
+  <div id="label-list" class="label-list"></div>
+
+  <script>
+    const blogID = "3849070220815751744"; // Ganti dengan ID blog Anda jika berbeda
+    const maxResults = 10;
+    let currentStartIndex = 45;
+    let currentPage = 1;
+    let allPosts = [];
+    let allLabelsSet = new Set();
+
+    function showRepoPosts(json) {
+      const entries = json.feed.entry || [];
+
+      const newPosts = entries.map((entry, index) => {
+        const title = entry.title.$t;
+        const link = entry.link.find(l => l.rel === "alternate").href;
+        const labels = entry.category?.map(c => c.term) || [];
+        const fileNumber = currentStartIndex + index;
+        const icon = labels.includes("folder") ? "📁" : "📄";
+
+        labels.forEach(label => allLabelsSet.add(label));
+
+        return {
+          title: `File ${fileNumber}`,
+          link,
+          icon,
+          rawTitle: title,
+          labels
+        };
+      });
+
+      allPosts = [...allPosts, ...newPosts];
+      sessionStorage.setItem("repo_page_" + currentStartIndex, JSON.stringify(newPosts));
+
+      renderPosts(newPosts);
+      renderLabels();
+    }
+
+    function renderPosts(list) {
+      const container = document.getElementById("repo-container");
+      const pageInfo = document.getElementById("page-info");
+      container.innerHTML = "";
+
+      list.forEach(post => {
+        container.innerHTML += `
+          <div class="repo-item">
+            <span class="repo-icon">${post.icon}</span>
+            <a href="${post.link}" target="_blank">${post.title}</a>
+          </div>
+        `;
+      });
+
+      pageInfo.textContent = `Page ${currentPage}`;
+    }
+
+    function renderLabels() {
+      const labelContainer = document.getElementById("label-list");
+      const labels = Array.from(allLabelsSet).sort();
+      if (labels.length === 0) {
+        labelContainer.innerHTML = "";
+        return;
+      }
+
+      const labelHTML = labels.map(l => `<span>${l}</span>`).join("");
+      labelContainer.innerHTML = `
+        <h4>🏷️ All Tags:</h4>
+        ${labelHTML}
+      `;
+    }
+
+    function loadPosts() {
+      const cache = sessionStorage.getItem("repo_page_" + currentStartIndex);
+      if (cache) {
+        const posts = JSON.parse(cache);
+        allPosts = [...allPosts, ...posts];
+        posts.forEach(p => p.labels?.forEach(l => allLabelsSet.add(l)));
+        renderPosts(posts);
+        renderLabels();
+      } else {
+        const oldScript = document.getElementById("jsonp-script");
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement("script");
+        script.id = "jsonp-script";
+        script.src = `https://www.blogger.com/feeds/${blogID}/posts/default?alt=json-in-script&callback=showRepoPosts&max-results=${maxResults}&start-index=${currentStartIndex}`;
+        document.body.appendChild(script);
+      }
+    }
+
+    function changePage(direction) {
+      const nextIndex = currentStartIndex + direction * maxResults;
+      if (nextIndex < 1) return;
+
+      currentStartIndex = nextIndex;
+      currentPage += direction;
+      loadPosts();
+    }
+
+    function filterPosts(query) {
+      const filtered = allPosts.filter(p =>
+        p.title.toLowerCase().includes(query.toLowerCase()) ||
+        p.rawTitle.toLowerCase().includes(query.toLowerCase()) ||
+        p.labels.some(l => l.toLowerCase().includes(query.toLowerCase()))
+      );
+      renderPosts(filtered);
+    }
+
+    loadPosts();
+  </script>
+  
+  
+</main>
+</body>
+</html>
